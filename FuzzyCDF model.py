@@ -383,10 +383,11 @@ for train_index, test_index in index:
         predictscore = np.copy((1 - S) * N + G * (1 - N))
         for i in range(len(predictscore)):
             for j in range(len(predictscore[i])):
-                if predictscore[i][j] > 0.5:
-                    predictscore[i][j] = 1
-                else:
-                    predictscore[i][j] = 0
+                if desc[j] == 'Obj':
+                    if predictscore[i][j] > 0.5:
+                        predictscore[i][j] = 1
+                    else:
+                        predictscore[i][j] = 0
         rmse = (score - predictscore) * (score - predictscore)
         rmse2 = np.sqrt(np.sum(np.copy(rmse)) / (stuNum * questionNum))
         rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)

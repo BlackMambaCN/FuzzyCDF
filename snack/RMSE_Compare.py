@@ -48,7 +48,6 @@ rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)
 sumRmse = np.sqrt(np.sum((score - predictscore) * (score - predictscore)) / (stuNum * questionNum))
 for i in range(len(predictscore)):
     for j in range(len(predictscore[i])):
-        print(desc[j])
         if desc[j] == 'Obj':
             if predictscore[i][j] > 0.5:
                 predictscore[i][j] = 1
