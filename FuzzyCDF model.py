@@ -132,7 +132,7 @@ updateA = np.copy(A)
 # 要求一个形态参数a。注意到β的设置可以通过设置scale关键字为1/β进行，文献上
 # 的第二个参数应该是β，一般设定β=1/λ。
 variance = 1 / stats.gamma.rvs(a=4, size=1, scale=1 / 6)
-updateV = variance
+updateV = np.copy(variance)
 
 '''2020.7.24'''
 '''初始化标记矩阵'''
@@ -396,7 +396,7 @@ for train_index, test_index in index:
         '''计算对数似然函数'''
         Ls = 0
         updateLs = 0
-        variance = 1 / stats.gamma.rvs(a=4, size=1, scale=1 / 6)
+        # variance = 1 / stats.gamma.rvs(a=4, size=1, scale=1 / 6)
         P = np.log(stats.gamma.pdf(x=1 / (variance + 1e-9), a=4, scale=1 / 6))
         updateP = np.log(stats.gamma.pdf(x=1 / (updateV + 1e-9), a=4, scale=1 / 6))
         '''2020.7.24'''
