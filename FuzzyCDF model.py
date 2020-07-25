@@ -38,7 +38,6 @@ for i in desc:
     elif i == 'Sub':
         subqusNum += 1
 
-
 trainscore = score  # 删除列
 knowledgePoint = len(q[0])  # 题目考察的知识点
 stuNum = len(trainscore)  # 学生数目
@@ -50,9 +49,8 @@ print("主观题数:", subqusNum)
 print("学生数：", stuNum)
 print("知识点数：", knowledgePoint)
 
-
 '''定义FuzzyCDF所需的变量'''
-theta = np.zeros(stuNum)  # 学生潜力
+theta = np.zeros([stuNum, 1])  # 学生潜力
 updateTheta = np.zeros(stuNum)
 A = np.zeros([stuNum, knowledgePoint])  # aik：知识点k对学生i的区分度
 updateA = np.zeros([stuNum, knowledgePoint])  # 更新时暂存矩阵
@@ -68,7 +66,6 @@ variance = 0  # 主观题计算得分的方差
 updateV = 0
 N = np.zeros([stuNum, questionNum])
 updateN = np.zeros([stuNum, questionNum])
-
 
 '''初始化各参数的分布参数'''
 mu_theta = 0
@@ -123,7 +120,6 @@ updateTheta = np.copy(theta)
 B = stats.norm.rvs(size=B.shape, loc=mu_b, scale=sig_b)
 updateB = np.copy(B)
 # print(B[1])
-
 '''初始化区分度矩阵：知识点k对学生i的区分度
    所以要得到一般意义上符合对数正态分布的随机变量X（即，logX服从n(mu,sigma^2)），
    需要令lognorm中的参数s=sigma,loc=0,scale=exp(mu)。'''
@@ -167,9 +163,11 @@ for train_index, test_index in index:
     '''开始迭代'''
     for w in range(echo):
         '''计算学生对知识点的认知状态'''
-        for i in range(stuNum):
-            for j in range(knowledgePoint):
-                alpha[i][j] = 1 / (1 + np.exp(-1.7 * A[i][j] * (theta[i] - B[i][j])))
+        alpha = 1 / (1 + np.exp(-1.7 * A * (theta - B)))
+        # for i in range(stuNum):
+        #     for j in range(knowledgePoint):
+        #         alpha[i][j] = 1 / (1 + np.exp(-1.7 * A[i][j] * (theta[i] - B[i][j])))
+        # print(np.all(alpha233 == alpha))
         # print(Q)
         '''计算学生对每道题的认知状态'''
         for i in range(stuNum):
@@ -216,10 +214,7 @@ for train_index, test_index in index:
             tempB[:, z] = np.copy(updateB[:, z])
 
             '''记录新的学生对知识点的认知状态'''
-            for i in range(stuNum):
-                for j in range(knowledgePoint):
-                    # print(tempA[i][j], theta[i] - tempB[i][j])
-                    updateAlpha[i][j] = 1 / (1 + np.exp(-1.7 * tempA[i][j] * (theta[i] - tempB[i][j])))
+            updateAlpha = 1 / (1 + np.exp(-1.7 * tempA * (theta - tempB)))
             '''记录新的学生对每道题的认知状态'''
             for i in range(stuNum):
                 for j in range(questionNum):
@@ -260,9 +255,7 @@ for train_index, test_index in index:
         print(w, countAB / knowledgePoint, "A，B转移学生的平均数")
 
         '''更新a，b后需要更新alpha和N矩阵'''
-        for i in range(stuNum):
-            for j in range(knowledgePoint):
-                alpha[i][j] = 1 / (1 + np.exp(-1.7 * A[i][j] * (theta[i] - B[i][j])))
+        alpha = 1 / (1 + np.exp(-1.7 * A * (theta - B)))
         for i in range(stuNum):
             for j in range(questionNum):
                 temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
@@ -284,9 +277,7 @@ for train_index, test_index in index:
         # updateTheta = stats.norm.rvs(size=theta.shape, loc=theta, scale=sig_theta)
         countTheta = 0
         '''记录新的学生对知识点的认知状态'''
-        for i in range(stuNum):
-            for j in range(knowledgePoint):
-                updateAlpha[i][j] = 1 / (1 + np.exp(-1.7 * A[i][j] * (updateTheta[i] - B[i][j])))
+        updateAlpha = 1 / (1 + np.exp(-1.7 * A * (updateTheta - B)))
         '''记录新的学生对每道题的认知状态'''
         for i in range(stuNum):
             for j in range(questionNum):
@@ -321,9 +312,7 @@ for train_index, test_index in index:
         print(w, countTheta, "名学生潜力转移了")
 
         '''更新theta后需要更新alpha和N矩阵'''
-        for i in range(stuNum):
-            for j in range(knowledgePoint):
-                alpha[i][j] = 1 / (1 + np.exp(-1.7 * A[i][j] * (theta[i] - B[i][j])))
+        alpha = 1 / (1 + np.exp(-1.7 * A * (theta - B)))
         for i in range(stuNum):
             for j in range(questionNum):
                 temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
