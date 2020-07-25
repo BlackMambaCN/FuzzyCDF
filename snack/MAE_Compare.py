@@ -48,10 +48,11 @@ mae = np.sqrt(np.sum(mae, axis=0) / stuNum)
 sumMae = np.sum(abs(score - predictscore)) / (stuNum * questionNum)
 for i in range(len(predictscore)):
     for j in range(len(predictscore[i])):
-        if predictscore[i][j] > 0.5:
-            predictscore[i][j] = 1
-        else:
-            predictscore[i][j] = 0
+        if desc[j] == 'Obj':
+            if predictscore[i][j] > 0.5:
+                predictscore[i][j] = 1
+            else:
+                predictscore[i][j] = 0
 mae2 = abs(score - predictscore)
 mae2 = np.sqrt(np.sum(mae2, axis=0) / stuNum)
 sumMae2 = np.sum(abs(score - predictscore)) / (stuNum * questionNum)
