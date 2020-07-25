@@ -14,7 +14,7 @@ for train_index, test_index in index:
 bb = b.copy()
 bb[:][0] = 0
 print(bb)
-print(int(21*0.8))
+print(int(536*0.2))
 # temp = []
 # temp.append(1.56)
 # temp.append(2.47)

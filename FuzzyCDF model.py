@@ -166,7 +166,13 @@ updateV = variance
 '''初始化标记矩阵'''
 percent = 0.2  # 测试集所占百分比
 stuIndex = np.arange(stuNum)
-kfold = KFold(n_splits=5, shuffle=False)  # n_splits表示划分为几块
+'''2020.7.25
+   测试学生数 * 测试题目数 = 学生数 * 题目数 * percent
+   测试学生数 = 学生数 * 题目数 * percent / 测试题目数
+   kfoldNum = 学生数 / 测试学生数 = 测试题目数 / （题目数 * percent）'''
+testQueNum = 8
+kfoldNum =testQueNum / (questionNum * percent)
+kfold = KFold(n_splits=kfoldNum, shuffle=False)  # n_splits表示划分为几块
 index = kfold.split(X=stuIndex)  # 返回分类后的数据集的索引
 
 '''这里的kfold将【0-535】536个数字分为了5种不同组合形式的训练集+测试集，
@@ -176,9 +182,9 @@ index = kfold.split(X=stuIndex)  # 返回分类后的数据集的索引
 
 for train_index, test_index in index:
     indicator = np.ones([stuNum, questionNum])  # 训练数据标注，1表示训练，0表示测试
-    testQuestionIndex = np.random.randint(0, questionNum - 1, size=int(questionNum * percent))  # 测试题号
+    testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)  # 测试题号
     while len(set(testQuestionIndex)) != len(testQuestionIndex):  # 如果取随机数的时候出现了重复数，重新取
-        testQuestionIndex = np.random.randint(0, questionNum - 1, size=int(questionNum * percent))
+        testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)
     print("测试题号：", testQuestionIndex)
     for i in test_index:
         indicator[i][testQuestionIndex] = 0  # 测试题号的X%的学生成绩作为测试集
