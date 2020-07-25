@@ -394,8 +394,6 @@ for train_index, test_index in index:
         updateV = variance - 0.01 + 0.02 * np.random.random(1)
 
         '''计算对数似然函数'''
-        Ls = 0
-        updateLs = 0
         # variance = 1 / stats.gamma.rvs(a=4, size=1, scale=1 / 6)
         P = np.log(stats.gamma.pdf(x=1 / (variance + 1e-9), a=4, scale=1 / 6))
         updateP = np.log(stats.gamma.pdf(x=1 / (updateV + 1e-9), a=4, scale=1 / 6))
