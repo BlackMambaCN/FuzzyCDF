@@ -50,7 +50,7 @@ print("学生数：", stuNum)
 print("知识点数：", knowledgePoint)
 
 '''定义FuzzyCDF所需的变量'''
-theta = np.zeros([stuNum, 1])  # 学生潜力
+theta = np.zeros(stuNum)  # 学生潜力
 updateTheta = np.zeros(stuNum)
 A = np.zeros([stuNum, knowledgePoint])  # aik：知识点k对学生i的区分度
 updateA = np.zeros([stuNum, knowledgePoint])  # 更新时暂存矩阵
@@ -112,7 +112,7 @@ updateG = np.copy(G)
 theta = stats.norm.rvs(size=theta.shape, loc=mu_theta, scale=sig_theta)
 # theta = mu_theta + sig_theta * np.random.random(theta.shape)
 updateTheta = np.copy(theta)
-# print(theta[1])
+print(theta)
 
 '''初始化难度矩阵（知识点k对学生i的难度）'''
 
@@ -163,7 +163,7 @@ for train_index, test_index in index:
     '''开始迭代'''
     for w in range(echo):
         '''计算学生对知识点的认知状态'''
-        alpha = 1 / (1 + np.exp(-1.7 * A * (theta - B)))
+        alpha = 1 / (1 + np.exp(-1.7 * A * (theta.reshape([stuNum, 1]) - B)))
         # for i in range(stuNum):
         #     for j in range(knowledgePoint):
         #         alpha[i][j] = 1 / (1 + np.exp(-1.7 * A[i][j] * (theta[i] - B[i][j])))
@@ -214,7 +214,7 @@ for train_index, test_index in index:
             tempB[:, z] = np.copy(updateB[:, z])
 
             '''记录新的学生对知识点的认知状态'''
-            updateAlpha = 1 / (1 + np.exp(-1.7 * tempA * (theta - tempB)))
+            updateAlpha = 1 / (1 + np.exp(-1.7 * tempA * (theta.reshape([stuNum, 1]) - tempB)))
             '''记录新的学生对每道题的认知状态'''
             for i in range(stuNum):
                 for j in range(questionNum):
@@ -255,7 +255,7 @@ for train_index, test_index in index:
         print(w, countAB / knowledgePoint, "A，B转移学生的平均数")
 
         '''更新a，b后需要更新alpha和N矩阵'''
-        alpha = 1 / (1 + np.exp(-1.7 * A * (theta - B)))
+        alpha = 1 / (1 + np.exp(-1.7 * A * (theta.reshape([stuNum, 1]) - B)))
         for i in range(stuNum):
             for j in range(questionNum):
                 temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
@@ -277,7 +277,7 @@ for train_index, test_index in index:
         # updateTheta = stats.norm.rvs(size=theta.shape, loc=theta, scale=sig_theta)
         countTheta = 0
         '''记录新的学生对知识点的认知状态'''
-        updateAlpha = 1 / (1 + np.exp(-1.7 * A * (updateTheta - B)))
+        updateAlpha = 1 / (1 + np.exp(-1.7 * A * (updateTheta.reshape([stuNum, 1]) - B)))
         '''记录新的学生对每道题的认知状态'''
         for i in range(stuNum):
             for j in range(questionNum):
@@ -312,7 +312,7 @@ for train_index, test_index in index:
         print(w, countTheta, "名学生潜力转移了")
 
         '''更新theta后需要更新alpha和N矩阵'''
-        alpha = 1 / (1 + np.exp(-1.7 * A * (theta - B)))
+        alpha = 1 / (1 + np.exp(-1.7 * A * (theta.reshape([stuNum, 1]) - B)))
         for i in range(stuNum):
             for j in range(questionNum):
                 temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
