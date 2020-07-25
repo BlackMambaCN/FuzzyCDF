@@ -7,7 +7,6 @@ from sklearn.model_selection import KFold
 
 ''' numpy里面的等号为引用（先创建numpy对象），深拷贝为np.copy'''
 epsilon = 1e-16
-updateabFlag = True
 score = np.loadtxt("math2015\\FrcSub\\data.txt")
 q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
 '''计算主观题和客观题的数目，根据problemdesc.txt'''
@@ -35,39 +34,25 @@ for i in desc:
     elif i == 'Sub':
         subqusNum += 1
 
-# deleteNum = 0
-# testq = q[deleteNum]
-# testscore = []
-# for i in range(len(score)):
-#     testscore.append(score[i][deleteNum])
-# testscore = np.array(testscore)
+
 trainscore = score  # 删除列
 knowledgePoint = len(q[0])  # 题目考察的知识点
 stuNum = len(trainscore)  # 学生数目
 questionNum = len(score[0])  # 考试题目数
-# if desc[deleteNum - 1] == 'Obj':  # 判断拿出去作为测试题的题目是主观题还是客观题
-#     objqusNum -= 1
-# else:
-#     subqusNum -= 1
-
 
 print("训练集试题数：", questionNum)
 print("客观题数：", objqusNum)
 print("主观题数:", subqusNum)
 print("学生数：", stuNum)
 print("知识点数：", knowledgePoint)
-# print("存在的认知状态数：", 2 ** knowledgePoint)
-# print("测试题号：", deleteNum)
-# print("迭代次数:", echo)
+
 
 '''定义FuzzyCDF所需的变量'''
 theta = np.zeros(stuNum)  # 学生潜力
 updateTheta = np.zeros(stuNum)
 A = np.zeros([stuNum, knowledgePoint])  # aik：知识点k对学生i的区分度
-# flagA = []  # 每个矩阵需要一个flag矩阵来确定其初始化的数据是否已经转变，转变的话其概率就要从分布概率函数变为均匀分布的概率
 updateA = np.zeros([stuNum, knowledgePoint])  # 更新时暂存矩阵
 B = np.zeros([stuNum, knowledgePoint])  # aik：知识点k对学生i的难度
-# flagB = []
 updateB = np.zeros([stuNum, knowledgePoint])
 alpha = np.zeros([stuNum, knowledgePoint])  # Alpha ij:学生对知识点的掌握程度
 updateAlpha = np.zeros([stuNum, knowledgePoint])
@@ -75,25 +60,12 @@ S = np.zeros(questionNum)  # 失误率
 G = np.zeros(questionNum)
 updateS = np.zeros(questionNum)
 updateG = np.zeros(questionNum)
-# flagS = []
-# flagG = []
 variance = 0  # 主观题计算得分的方差
 updateV = 0
 N = np.zeros([stuNum, questionNum])
 updateN = np.zeros([stuNum, questionNum])
 
-'''要得到一般意义上符合对数正态分布的随机变量X（即，logX服从n(mu,sigma^2)），
-   需要令lognorm中的参数s=sigma,loc=0,scale=exp(mu)。'''
 
-# a = stats.beta(a=1, b=2)
-# # temp = a.rvs(size=100)  # numpy矩阵
-# # # print(beta.__doc__)
-# # # print(beta.var(a=1,b=2))
-# # # print(1/18)
-# # x = np.linspace(0, 1, 100)
-# # y = beta.pdf(x, a=1, b=2)
-# # plt.plot(x, y)
-# # plt.show()
 '''初始化各参数的分布参数'''
 mu_theta = 0
 sig_theta = 1
@@ -171,7 +143,7 @@ stuIndex = np.arange(stuNum)
    测试学生数 = 学生数 * 题目数 * percent / 测试题目数
    kfoldNum = 学生数 / 测试学生数 = 测试题目数 / （题目数 * percent）'''
 testQueNum = 8
-kfoldNum =testQueNum / (questionNum * percent)
+kfoldNum = int(testQueNum / (questionNum * percent))
 kfold = KFold(n_splits=kfoldNum, shuffle=True)  # n_splits表示划分为几块
 index = kfold.split(X=stuIndex)  # 返回分类后的数据集的索引
 

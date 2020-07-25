@@ -43,30 +43,39 @@ desc = desc.reshape(-1)
 #             N[i][j] = max(temp)
 
 predictscore = np.copy((1 - S) * N + G * (1 - N))
-rmse = (score - predictscore) * (score - predictscore)
-rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)
-sumRmse = np.sqrt(np.sum((score - predictscore) * (score - predictscore)) / (stuNum * questionNum))
+mae = abs(score - predictscore)
+mae = np.sqrt(np.sum(mae, axis=0) / stuNum)
+sumMae = np.sum(abs(score - predictscore)) / (stuNum * questionNum)
 for i in range(len(predictscore)):
     for j in range(len(predictscore[i])):
         if predictscore[i][j] > 0.5:
             predictscore[i][j] = 1
         else:
             predictscore[i][j] = 0
-rmse2 = (score - predictscore) * (score - predictscore)
-rmse2 = np.sqrt(np.sum(rmse2, axis=0) / stuNum)
-sumRmse2 = np.sqrt(np.sum((score - predictscore) * (score - predictscore)) / (stuNum * questionNum))
-print("RMSE:", rmse)
-print("RMSE(Wu):", rmse2)
-print("sumRMSE", sumRmse)
-print("sumRMSE2(Wu)", sumRmse2)
+mae2 = abs(score - predictscore)
+mae2 = np.sqrt(np.sum(mae2, axis=0) / stuNum)
+sumMae2 = np.sum(abs(score - predictscore)) / (stuNum * questionNum)
+print("MAE:", mae)
+print("MAE(Wu):", mae2)
+print("sumMae", sumMae)
+print("sumMae(Wu)", sumMae2)
 # print(np.sqrt(np.sum((score - predictscore) * (score - predictscore))/stuNum))
 x = [i for i in range(questionNum)]
 x = np.array(x)
 x = x + 1
 plt.xticks(x)
-plt.plot(x, rmse, 'ro-', label='R-Fuzzy')
-plt.plot(x, rmse2, 'bs-', label='FuzzyCDF')
+plt.plot(x, mae, 'ro-', label='R-Fuzzy')
+plt.plot(x, mae2, 'bs-', label='FuzzyCDF')
 plt.xlabel("题目号")
-plt.ylabel("RMSE")
+plt.ylabel("MAE")
 plt.legend(loc='upper right')
 plt.show()
+
+
+
+
+
+
+
+
+
