@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import stats
+from scipy import stats
 
 
 def getLog( score, q, desc, N, s, g, sigma ):
