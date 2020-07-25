@@ -172,7 +172,7 @@ stuIndex = np.arange(stuNum)
    kfoldNum = 学生数 / 测试学生数 = 测试题目数 / （题目数 * percent）'''
 testQueNum = 8
 kfoldNum =testQueNum / (questionNum * percent)
-kfold = KFold(n_splits=kfoldNum, shuffle=False)  # n_splits表示划分为几块
+kfold = KFold(n_splits=kfoldNum, shuffle=True)  # n_splits表示划分为几块
 index = kfold.split(X=stuIndex)  # 返回分类后的数据集的索引
 
 '''这里的kfold将【0-535】536个数字分为了5种不同组合形式的训练集+测试集，
