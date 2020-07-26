@@ -23,10 +23,14 @@ for i in fileStr:
     i = i[:-1]  # 去掉换行符
     i = i.strip()  # 去掉字符串两端的空白字符
     i = i.split("\t")  # 以\t为分隔符分隔每个字符串
-    desc.append(i)
+    for j in i:
+        desc.append(i)
     # print(i)
 file.close()
 desc = np.array(desc)
+if desc[len(desc) - 1] == '':
+    desc = np.delete(desc, len(desc) - 1, axis=0)
+desc = desc.reshape([-1, 3])
 desc = np.delete(desc, 0, axis=0)
 desc = np.delete(desc, 0, axis=1)
 desc = np.delete(desc, 1, axis=1)
@@ -310,7 +314,6 @@ for train_index, test_index in index:
                 countTheta += 1
                 theta[i] = updateTheta[i]  # 更新学生潜力
         print(w, countTheta, "名学生潜力转移了")
-
         '''更新theta后需要更新alpha和N矩阵'''
         alpha = 1 / (1 + np.exp(-1.7 * A * (theta.reshape([stuNum, 1]) - B)))
         for i in range(stuNum):
