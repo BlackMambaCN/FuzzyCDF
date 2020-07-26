@@ -24,7 +24,7 @@ for i in fileStr:
     i = i.strip()  # 去掉字符串两端的空白字符
     i = i.split("\t")  # 以\t为分隔符分隔每个字符串
     for j in i:
-        desc.append(i)
+        desc.append(j)
     # print(i)
 file.close()
 desc = np.array(desc)
