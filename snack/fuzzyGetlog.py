@@ -14,4 +14,6 @@ def getLog(score, q,  N, s, g, sigma, subqueIndex, objqueIndex):
     if len(subqueIndex > 0):  # 存在主观题
         result[subqueIndex] = stats.norm.pdf(np.transpose(score)[subqueIndex], loc=np.transpose(x)[subqueIndex],
                                              scale=sigma)
-    return np.log(np.transpose(result))
+    result = np.log(result)
+    result[np.isnan(result)] = np.log(0)
+    return np.transpose(result)

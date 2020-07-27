@@ -317,12 +317,6 @@ for train_index, test_index in index:
                                     scale=0.2 * np.random.random(S.shape))
         updateG = stats.uniform.rvs(size=G.shape, loc=G - 0.1 * np.random.random(S.shape),
                                     scale=0.2 * np.random.random(G.shape))
-        # for i in range(questionNum):
-        #     if updateS[i] >= 1:
-        #         updateS[i] = 0.6
-        #     if updateG[i] >= 1:
-        #         updateG[i] = 0.6
-        # countSG = 0
         '''文章中的似然函数是连乘，那我们求其对数似然函数变为累加，计算方便(s,g)'''
         L = fuzzyGetlog.getLog(trainscore, q, N, S, G, variance, subqueIndex, objqueIndex)
         updateL = fuzzyGetlog.getLog(trainscore, q, N, updateS, updateG, variance, subqueIndex, objqueIndex)
@@ -393,12 +387,12 @@ for train_index, test_index in index:
         if transferP >= np.random.random(1):
             variance = updateV
         if w > burnin:
-            ea += np.copy(A)
-            eb += np.copy(B)
-            etheta += np.copy(theta)
-            ealpha += np.copy(alpha)
-            es += np.copy(S)
-            eg += np.copy(G)
+            ea = ea + A
+            eb = eb + B
+            etheta = etheta + theta
+            ealpha = ealpha + alpha
+            es = es + S
+            eg = eg + G
             evariance += variance
     '''迭代结束，计算估计值'''
     ea = ea / (echo - burnin)
@@ -416,16 +410,14 @@ for train_index, test_index in index:
         '''axis默认为axis=0即列向,如果axis=1即横向'''
         if len(subqueIndex) != 0:  # 存在主观题
             N[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
-    es = es / (echo - burnin)
-    eg = eg / (echo - burnin)
     predictscore = (1 - es) * N + eg * (1 - N)
     rmse = (score - predictscore) * (score - predictscore)
     rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)
     print("LastRMSE:", rmse)
     np.savetxt('FuzzyA.txt', ea, fmt='%0.2f')
     np.savetxt('FuzzyB.txt', eb, fmt='%0.2f')
-    np.savetxt('FuzzyS.txt', es, fmt='%0.2f')
-    np.savetxt('FuzzyG.txt', eg, fmt='%0.2f')
+    np.savetxt('FuzzyS.txt', es)
+    np.savetxt('FuzzyG.txt', eg)
     np.savetxt('FuzzyTheta.txt', etheta, fmt='%0.2f')
     np.savetxt('FuzzyAlpha.txt', ealpha, fmt='%0.2f')
     np.savetxt('FuzzyN.txt', N, fmt='%0.2f')
