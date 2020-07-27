@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from matplotlib import style
 from snack import fuzzyGetlog
+from snack import transformQ
+from snack import getDESC
 from sklearn.model_selection import KFold
 
 ''' numpy里面的等号为引用（先创建numpy对象），深拷贝为np.copy'''
@@ -14,34 +16,10 @@ epsilon = 1e-16
 
 score = np.loadtxt("math2015\\Math1\\data.txt")
 q = np.loadtxt("math2015\\Math1\\q.txt")  # 知识点矩阵
-file = open("math2015\\Math1\\problemdesc.txt")
+tempQ = np.vectorize(transformQ.transform(q))  # 把q矩阵中为0的值改为正无穷
 subqusNum = 0  # 主观题数目
 objqusNum = 0  # 客观题数目
-fileStr = file.readlines()  # string类型的list
-desc = []
-for i in fileStr:
-    i = i[:-1]  # 去掉换行符
-    i = i.strip()  # 去掉字符串两端的空白字符
-    i = i.split("\t")  # 以\t为分隔符分隔每个字符串
-    for j in i:
-        desc.append(j)
-    # print(i)
-file.close()
-desc = np.array(desc)
-if desc[len(desc) - 1] == '':
-    desc = np.delete(desc, len(desc) - 1, axis=0)
-desc = desc.reshape([-1, 3])
-desc = np.delete(desc, 0, axis=0)
-desc = np.delete(desc, 0, axis=1)
-desc = np.delete(desc, 1, axis=1)
-desc = desc.reshape(-1)
-print(desc)
-for i in desc:
-    if i == 'Obj':
-        objqusNum += 1
-    elif i == 'Sub':
-        subqusNum += 1
-
+desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("..\\math2015\\Math1\\problemdesc.txt")
 trainscore = score  # 删除列
 knowledgePoint = len(q[0])  # 题目考察的知识点
 stuNum = len(trainscore)  # 学生数目
@@ -116,7 +94,6 @@ updateG = np.copy(G)
 theta = stats.norm.rvs(size=theta.shape, loc=mu_theta, scale=sig_theta)
 # theta = mu_theta + sig_theta * np.random.random(theta.shape)
 updateTheta = np.copy(theta)
-print(theta)
 
 '''初始化难度矩阵（知识点k对学生i的难度）'''
 
@@ -173,18 +150,31 @@ for train_index, test_index in index:
         #         alpha[i][j] = 1 / (1 + np.exp(-1.7 * A[i][j] * (theta[i] - B[i][j])))
         # print(np.all(alpha233 == alpha))
         # print(Q)
-        '''计算学生对每道题的认知状态'''
+        '''计算学生对每道题的认知状态
+           2020.7.27 利用tempQ矩阵与alpha矩阵的每一个行相乘相乘得到每个学生对
+           每道题中每个知识点的掌握程度，题目中没考到的知识点都是inf * alpha = inf，这样的话取最小即可
+           得到客观题的掌握程度。
+           PS：若aplha=0，则会产生nan这个情况，导致np.min返回nan，因此取最小值之前还有一步去除nan值。
+           '''
         for i in range(stuNum):
-            for j in range(questionNum):
-                temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
-                for k in range(knowledgePoint):
-                    if q[j][k] == 1:
-                        temp.append(alpha[i][k])
-                # print(temp)
-                if desc[j] == 'Obj':  # 客观题取最小值
-                    N[i][j] = min(temp)
-                elif desc[j] == 'Sub':  # 主观题取最大值
-                    N[i][j] = max(temp)
+            temp = alpha[i] * tempQ
+            temp[np.isnan(temp)] = 10  # 将nan值变成一个不可能是最小值的数即可
+            # print(temp)
+            N[i][objqueIndex] = np.min(temp[objqueIndex], axis=1)  # axis=1表示行最小值
+            '''axis默认为axis=0即列向,如果axis=1即横向'''
+            if len(subqueIndex) != 0:  # 存在主观题
+                N[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
+        # for i in range(stuNum):
+        #     for j in range(questionNum):
+        #         temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
+        #         for k in range(knowledgePoint):
+        #             if q[j][k] == 1:
+        #                 temp.append(alpha[i][k])
+        #         # print(temp)
+        #         if desc[j] == 'Obj':  # 客观题取最小值
+        #             N[i][j] = min(temp)
+        #         elif desc[j] == 'Sub':  # 主观题取最大值
+        #             N[i][j] = max(temp)
         # print(N)
 
         '''开始更新a,b'''
@@ -203,7 +193,7 @@ for train_index, test_index in index:
         # updateA = stats.norm.rvs(size=A.shape, loc=A, scale=sig_a)
         # updateB = stats.norm.rvs(size=B.shape, loc=mu_b, scale=sig_b)
         # updateA = stats.lognorm.rvs(s=sig_a, loc=0, scale=np.exp(mu_a), size=A.shape)
-        countAB = 0
+        # countAB = 0
         for z in range(knowledgePoint):
             # updateA[i][j] = np.random.uniform(low=A[i][j] - delta, high=A[i][j] + delta, size=1)
             # updateB[i][j] = np.random.uniform(low=B[i][j] - delta, high=B[i][j] + delta, size=1)
@@ -221,16 +211,13 @@ for train_index, test_index in index:
             updateAlpha = 1 / (1 + np.exp(-1.7 * tempA * (theta.reshape([stuNum, 1]) - tempB)))
             '''记录新的学生对每道题的认知状态'''
             for i in range(stuNum):
-                for j in range(questionNum):
-                    temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
-                    for k in range(knowledgePoint):
-                        if q[j][k] == 1:
-                            temp.append(updateAlpha[i][k])
-                    # print(temp)
-                    if desc[j] == 'Obj':  # 客观题取最小值
-                        updateN[i][j] = min(temp)
-                    elif desc[j] == 'Sub':  # 主观题取最大值
-                        updateN[i][j] = max(temp)
+                temp = updateAlpha[i] * tempQ
+                temp[np.isnan(temp)] = 10  # 将nan值变成一个不可能是最小值的数即可
+                # print(temp)
+                updateN[i][objqueIndex] = np.min(temp[objqueIndex], axis=1)  # axis=1表示行最小值
+                '''axis默认为axis=0即列向,如果axis=1即横向'''
+                if len(subqueIndex) != 0:  # 存在主观题
+                    updateN[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
             # print(N, 'n')
             '''文章中的似然函数是连乘，那我们求其对数似然函数变为累加，计算方便(a,b)'''
             L = fuzzyGetlog.getLog(trainscore, q, desc, N, S, G, variance)
@@ -248,29 +235,28 @@ for train_index, test_index in index:
                 stats.lognorm.pdf(x=tempA[:, z], s=sig_a, loc=0, scale=np.exp(mu_a)))  # axis=1行相加 0为列相加
             transferP = np.exp(logP1 - logP0)
             # print(transferP)
-            mask = np.random.random(1)
-            for i in range(stuNum):
-                if transferP[i] >= 1:
-                    transferP[i] = 1
-                if transferP[i] >= mask:
-                    countAB += 1
-                    A[i, z] = updateA[i, z]  # 更新a，b
-                    B[i, z] = updateB[i, z]
-        print(w, countAB / knowledgePoint, "A，B转移学生的平均数")
+            mask = transferP >= np.random.random(1)
+            A[mask, z] = updateA[mask, z]
+        #     for i in range(stuNum):
+        #         if transferP[i] >= 1:
+        #             transferP[i] = 1
+        #         if transferP[i] >= mask:
+        #             countAB += 1
+        #             A[i, z] = updateA[i, z]  # 更新a，b
+        #             B[i, z] = updateB[i, z]
+        # print(w, countAB / knowledgePoint, "A，B转移学生的平均数")
+        print(w, "a,b更新结束")
 
         '''更新a，b后需要更新alpha和N矩阵'''
         alpha = 1 / (1 + np.exp(-1.7 * A * (theta.reshape([stuNum, 1]) - B)))
         for i in range(stuNum):
-            for j in range(questionNum):
-                temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
-                for k in range(knowledgePoint):
-                    if q[j][k] == 1:
-                        temp.append(alpha[i][k])
-                # print(temp)
-                if desc[j] == 'Obj':  # 客观题取最小值
-                    N[i][j] = min(temp)
-                elif desc[j] == 'Sub':  # 主观题取最大值
-                    N[i][j] = max(temp)
+            temp = alpha[i] * tempQ
+            temp[np.isnan(temp)] = 10  # 将nan值变成一个不可能是最小值的数即可
+            # print(temp)
+            N[i][objqueIndex] = np.min(temp[objqueIndex], axis=1)  # axis=1表示行最小值
+            '''axis默认为axis=0即列向,如果axis=1即横向'''
+            if len(subqueIndex) != 0:  # 存在主观题
+                N[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
 
         '''开始更新theta'''
         '''遇到问题：不收敛
@@ -279,21 +265,18 @@ for train_index, test_index in index:
         deltaTheta = np.random.random(theta.shape)
         updateTheta = stats.uniform.rvs(size=theta.shape, loc=theta - 0.1 * deltaTheta, scale=0.2 * deltaTheta)
         # updateTheta = stats.norm.rvs(size=theta.shape, loc=theta, scale=sig_theta)
-        countTheta = 0
+        # countTheta = 0
         '''记录新的学生对知识点的认知状态'''
         updateAlpha = 1 / (1 + np.exp(-1.7 * A * (updateTheta.reshape([stuNum, 1]) - B)))
         '''记录新的学生对每道题的认知状态'''
         for i in range(stuNum):
-            for j in range(questionNum):
-                temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
-                for k in range(knowledgePoint):
-                    if q[j][k] == 1:
-                        temp.append(updateAlpha[i][k])
-                # print(temp)
-                if desc[j] == 'Obj':  # 客观题取最小值
-                    updateN[i][j] = min(temp)
-                elif desc[j] == 'Sub':  # 主观题取最大值
-                    updateN[i][j] = max(temp)
+            temp = updateAlpha[i] * tempQ
+            temp[np.isnan(temp)] = 10  # 将nan值变成一个不可能是最小值的数即可
+            # print(temp)
+            updateN[i][objqueIndex] = np.min(temp[objqueIndex], axis=1)  # axis=1表示行最小值
+            '''axis默认为axis=0即列向,如果axis=1即横向'''
+            if len(subqueIndex) != 0:  # 存在主观题
+                updateN[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
 
         '''文章中的似然函数是连乘，那我们求其对数似然函数变为累加，计算方便(theta)'''
         L = fuzzyGetlog.getLog(trainscore, q, desc, N, S, G, variance)
@@ -305,28 +288,26 @@ for train_index, test_index in index:
         logP1 = np.sum(updateL, axis=1) + np.log(stats.norm.pdf(x=updateTheta, loc=mu_theta, scale=sig_theta))
         transferP = np.exp(logP1 - logP0)
         # print(transferP, "theta 转移概率矩阵")
-        mask = np.random.random(1)
-        for i in range(stuNum):
-            if transferP[i] >= 1:
-                transferP[i] = 1
-            if transferP[i] >= mask:  # 该theta值适合学生i
-                # print("学生", i, "的潜力转移了")
-                countTheta += 1
-                theta[i] = updateTheta[i]  # 更新学生潜力
-        print(w, countTheta, "名学生潜力转移了")
+        mask = transferP >= np.random.random(1)
+        theta[mask] = updateTheta[mask]
+        # for i in range(stuNum):
+        #     if transferP[i] >= 1:
+        #         transferP[i] = 1
+        #     if transferP[i] >= mask:  # 该theta值适合学生i
+        #         # print("学生", i, "的潜力转移了")
+        #         countTheta += 1
+        #         theta[i] = updateTheta[i]  # 更新学生潜力
+        print(w, "学生潜力迭代结束")
         '''更新theta后需要更新alpha和N矩阵'''
         alpha = 1 / (1 + np.exp(-1.7 * A * (theta.reshape([stuNum, 1]) - B)))
         for i in range(stuNum):
-            for j in range(questionNum):
-                temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
-                for k in range(knowledgePoint):
-                    if q[j][k] == 1:
-                        temp.append(alpha[i][k])
-                # print(temp)
-                if desc[j] == 'Obj':  # 客观题取最小值
-                    N[i][j] = min(temp)
-                elif desc[j] == 'Sub':  # 主观题取最大值
-                    N[i][j] = max(temp)
+            temp = alpha[i] * tempQ
+            temp[np.isnan(temp)] = 10  # 将nan值变成一个不可能是最小值的数即可
+            # print(temp)
+            N[i][objqueIndex] = np.min(temp[objqueIndex], axis=1)  # axis=1表示行最小值
+            '''axis默认为axis=0即列向,如果axis=1即横向'''
+            if len(subqueIndex) != 0:  # 存在主观题
+                N[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
 
         '''更新s，g。因为s，g只影响似然函数的值，知识点认知状态，题目的认知状态与其无关，直接用alpha和N矩阵即可
            更新方法（假想）：一道题一道题的改变其s，g，然后根据所有学生的似然函数值计算转移概率，之后进行转移or保留'''
@@ -341,7 +322,7 @@ for train_index, test_index in index:
         #         updateS[i] = 0.6
         #     if updateG[i] >= 1:
         #         updateG[i] = 0.6
-        countSG = 0
+        # countSG = 0
         '''文章中的似然函数是连乘，那我们求其对数似然函数变为累加，计算方便(s,g)'''
         L = fuzzyGetlog.getLog(trainscore, q, desc, N, S, G, variance)
         updateL = fuzzyGetlog.getLog(trainscore, q, desc, N, updateS, updateG, variance)
@@ -362,15 +343,17 @@ for train_index, test_index in index:
 
         transferP = np.exp(logP1 - logP0)
         # print(transferP)
-        mask = np.random.random(1)
-        for i in range(questionNum):
-            if transferP[i] >= 1:
-                transferP[i] = 1
-            if transferP[i] >= mask:
-                countSG += 1
-                S[i] = updateS[i]
-                G[i] = updateG[i]
-        print(w, countSG, "道题转移了")
+        mask = transferP >= np.random.random(1)
+        S[mask] = updateS[mask]
+        G[mask] = updateG[mask]
+        # for i in range(questionNum):
+        #     if transferP[i] >= 1:
+        #         transferP[i] = 1
+        #     if transferP[i] >= mask:
+        #         countSG += 1
+        #         S[i] = updateS[i]
+        #         G[i] = updateG[i]
+        print(w, "问题转移结束")
         '''2020.7.7'''
         predictscore = np.copy((1 - S) * N + G * (1 - N))
         for i in range(len(predictscore)):
@@ -417,9 +400,7 @@ for train_index, test_index in index:
             es += np.copy(S)
             eg += np.copy(G)
             evariance += variance
-    print(theta)
-    print(1 - S)
-    print(G)
+    '''迭代结束，计算估计值'''
     ea = ea / (echo - burnin)
     eb = eb / (echo - burnin)
     etheta = etheta / (echo - burnin)
@@ -428,16 +409,13 @@ for train_index, test_index in index:
     eg = eg / (echo - burnin)
     evariance = evariance / (echo - burnin)
     for i in range(stuNum):
-        for j in range(questionNum):
-            temp = []  # 将每道题考察的知识点的qjk加进来取最大/最小作为学生的对该题目的认知状态
-            for k in range(knowledgePoint):
-                if q[j][k] == 1:
-                    temp.append(ealpha[i][k])
-            # print(temp)
-            if desc[j] == 'Obj':  # 客观题取最小值
-                N[i][j] = min(temp)
-            elif desc[j] == 'Sub':  # 主观题取最大值
-                N[i][j] = max(temp)
+        temp = ealpha[i] * tempQ
+        temp[np.isnan(temp)] = 10  # 将nan值变成一个不可能是最小值的数即可
+        # print(temp)
+        N[i][objqueIndex] = np.min(temp[objqueIndex], axis=1)  # axis=1表示行最小值
+        '''axis默认为axis=0即列向,如果axis=1即横向'''
+        if len(subqueIndex) != 0:  # 存在主观题
+            N[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
     es = es / (echo - burnin)
     eg = eg / (echo - burnin)
     predictscore = (1 - es) * N + eg * (1 - N)
