@@ -9,16 +9,17 @@ from sklearn.model_selection import KFold
 
 ''' numpy里面的等号为引用（先创建numpy对象），深拷贝为np.copy'''
 '''计算主观题和客观题的数目，根据problemdesc.txt'''
-score = np.loadtxt("math2015\\FrcSub\\data.txt")
-q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
-#
-# score = np.loadtxt("math2015\\Math1\\data.txt")
-# q = np.loadtxt("math2015\\Math1\\q.txt")  # 知识点矩阵
-funcQ = np.vectorize(transformQ.transform)
-tempQ = funcQ(q)  # 把q矩阵中为0的值改为正无穷
+# score = np.loadtxt("math2015\\FrcSub\\data.txt")
+# q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
+
+score = np.loadtxt("math2015\\Math1\\data.txt")
+q = np.loadtxt("math2015\\Math1\\q.txt")  # 知识点矩阵
+tempQ = np.copy(q)
 subqusNum = 0  # 主观题数目
 objqusNum = 0  # 客观题数目
-desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("math2015\\FrcSub\\problemdesc.txt")
+desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("math2015\\Math1\\problemdesc.txt")
+funcQ = np.vectorize(transformQ.transform)
+tempQ[objqueIndex] = funcQ(q[objqueIndex])  # 把q矩阵中为0的值改为正无穷
 print(desc)
 trainscore = score
 knowledgePoint = len(q[0])  # 题目考察的知识点
