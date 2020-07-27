@@ -8,18 +8,18 @@ from snack import getDESC
 from sklearn.model_selection import KFold
 
 ''' numpy里面的等号为引用（先创建numpy对象），深拷贝为np.copy'''
-epsilon = 1e-16
 '''计算主观题和客观题的数目，根据problemdesc.txt'''
-# score = np.loadtxt("math2015\\FrcSub\\data.txt")
-# q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
-# file = open("math2015\\FrcSub\\problemdesc.txt")
-
-score = np.loadtxt("math2015\\Math1\\data.txt")
-q = np.loadtxt("math2015\\Math1\\q.txt")  # 知识点矩阵
-tempQ = np.vectorize(transformQ.transform(q))  # 把q矩阵中为0的值改为正无穷
+score = np.loadtxt("math2015\\FrcSub\\data.txt")
+q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
+#
+# score = np.loadtxt("math2015\\Math1\\data.txt")
+# q = np.loadtxt("math2015\\Math1\\q.txt")  # 知识点矩阵
+funcQ = np.vectorize(transformQ.transform)
+tempQ = funcQ(q)  # 把q矩阵中为0的值改为正无穷
 subqusNum = 0  # 主观题数目
 objqusNum = 0  # 客观题数目
-desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("..\\math2015\\Math1\\problemdesc.txt")
+desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("math2015\\FrcSub\\problemdesc.txt")
+print(desc)
 trainscore = score
 knowledgePoint = len(q[0])  # 题目考察的知识点
 stuNum = len(trainscore)  # 学生数目
@@ -52,8 +52,8 @@ updateN = np.zeros([stuNum, questionNum])
 '''初始化各参数的分布参数'''
 mu_theta = 0
 sig_theta = 1
-max_theta = 4
-min_theta = -4
+# max_theta = 4
+# min_theta = -4
 mu_a = 0
 sig_a = 1
 mu_b = 0
@@ -62,7 +62,7 @@ min_s = 0
 max_s = 0.6
 min_g = 0
 max_g = 0.6
-delta = 1 * 1e-2
+# delta = 1 * 1e-2
 echo = 5000  # 迭代次数
 burnin = 2500
 
@@ -220,8 +220,8 @@ for train_index, test_index in index:
                     updateN[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
             # print(N, 'n')
             '''文章中的似然函数是连乘，那我们求其对数似然函数变为累加，计算方便(a,b)'''
-            L = fuzzyGetlog.getLog(trainscore, q, desc, N, S, G, variance)
-            updateL = fuzzyGetlog.getLog(trainscore, q, desc, updateN, S, G, variance)
+            L = fuzzyGetlog.getLog(trainscore, q, N, S, G, variance, subqueIndex, objqueIndex)
+            updateL = fuzzyGetlog.getLog(trainscore, q, updateN, S, G, variance, subqueIndex, objqueIndex)
             for i in test_index:  # 除去测试集数据影响
                 L[i][testQuestionIndex] = 0
                 updateL[i][testQuestionIndex] = 0
@@ -279,8 +279,8 @@ for train_index, test_index in index:
                 updateN[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
 
         '''文章中的似然函数是连乘，那我们求其对数似然函数变为累加，计算方便(theta)'''
-        L = fuzzyGetlog.getLog(trainscore, q, desc, N, S, G, variance)
-        updateL = fuzzyGetlog.getLog(trainscore, q, desc, updateN, S, G, variance)
+        L = fuzzyGetlog.getLog(trainscore, q, N, S, G, variance, subqueIndex, objqueIndex)
+        updateL = fuzzyGetlog.getLog(trainscore, q, updateN, S, G, variance, subqueIndex, objqueIndex)
         for i in test_index:  # 除去测试集数据影响
             L[i][testQuestionIndex] = 0
             updateL[i][testQuestionIndex] = 0
@@ -324,8 +324,8 @@ for train_index, test_index in index:
         #         updateG[i] = 0.6
         # countSG = 0
         '''文章中的似然函数是连乘，那我们求其对数似然函数变为累加，计算方便(s,g)'''
-        L = fuzzyGetlog.getLog(trainscore, q, desc, N, S, G, variance)
-        updateL = fuzzyGetlog.getLog(trainscore, q, desc, N, updateS, updateG, variance)
+        L = fuzzyGetlog.getLog(trainscore, q, N, S, G, variance, subqueIndex, objqueIndex)
+        updateL = fuzzyGetlog.getLog(trainscore, q, N, updateS, updateG, variance, subqueIndex, objqueIndex)
         for i in test_index:  # 除去测试集数据影响
             L[i][testQuestionIndex] = 0
             updateL[i][testQuestionIndex] = 0
@@ -378,8 +378,8 @@ for train_index, test_index in index:
         P = np.log(stats.gamma.pdf(x=1 / (variance + 1e-9), a=4, scale=1 / 6))
         updateP = np.log(stats.gamma.pdf(x=1 / (updateV + 1e-9), a=4, scale=1 / 6))
         '''2020.7.24'''
-        L = fuzzyGetlog.getLog(trainscore, q, desc, N, S, G, variance)
-        updateL = fuzzyGetlog.getLog(trainscore, q, desc, N, S, G, updateV)
+        L = fuzzyGetlog.getLog(trainscore, q, N, S, G, variance, subqueIndex, objqueIndex)
+        updateL = fuzzyGetlog.getLog(trainscore, q, N, S, G, updateV, subqueIndex, objqueIndex)
         for i in test_index:  # 除去测试集数据影响
             L[i][testQuestionIndex] = 0
             updateL[i][testQuestionIndex] = 0
@@ -419,7 +419,6 @@ for train_index, test_index in index:
     es = es / (echo - burnin)
     eg = eg / (echo - burnin)
     predictscore = (1 - es) * N + eg * (1 - N)
-    # predictscore = (1 - S) * N + G * (1 - N)
     rmse = (score - predictscore) * (score - predictscore)
     rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)
     print("LastRMSE:", rmse)

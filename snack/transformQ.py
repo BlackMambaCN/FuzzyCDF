@@ -1,5 +1,5 @@
 def transform(a):
     if a == 0:
-        a = float('inf')
+        return float('inf')
     else:
-        a = 1
+        return 1
