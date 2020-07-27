@@ -19,7 +19,7 @@ subqusNum = 0  # 主观题数目
 objqusNum = 0  # 客观题数目
 desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("math2015\\Math1\\problemdesc.txt")
 funcQ = np.vectorize(transformQ.transform)
-tempQ[objqueIndex] = funcQ(q[objqueIndex])  # 把q矩阵中为0的值改为正无穷
+tempQ[objqueIndex] = funcQ(q[objqueIndex])  # 把q矩阵中客观题为0的值改为正无穷
 print(desc)
 trainscore = score
 knowledgePoint = len(q[0])  # 题目考察的知识点
