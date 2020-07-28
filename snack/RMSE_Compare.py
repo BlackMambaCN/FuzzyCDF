@@ -1,10 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from snack import getDESC
+
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
-score = np.loadtxt("..\\math2015\\FrcSub\\data.txt")
-q = np.loadtxt("..\\math2015\\FrcSub\\q.txt")
+score = np.loadtxt("..\\math2015\\Math1\\data.txt")
+q = np.loadtxt("..\\math2015\\Math1\\q.txt")
 stuNum = len(score)
 print(stuNum)
 questionNum = len(score[0])
@@ -14,21 +16,7 @@ alpha = np.loadtxt("..\\FuzzyAlpha.txt")
 S = np.loadtxt("..\\FuzzyS.txt")
 G = np.loadtxt("..\\FuzzyG.txt")
 # N = np.zeros([stuNum, questionNum])
-file = open("../math2015/FrcSub/problemdesc.txt")
-fileStr = file.readlines()  # string类型的list
-desc = []
-for i in fileStr:
-    i = i[:-1]  # 去掉换行符
-    i = i.strip()  # 去掉字符串两端的空白字符
-    i = i.split("\t")  # 以\t为分隔符分隔每个字符串
-    desc.append(i)
-    # print(i)
-file.close()
-desc = np.array(desc)
-desc = np.delete(desc, 0, axis=0)
-desc = np.delete(desc, 0, axis=1)
-desc = np.delete(desc, 1, axis=1)
-desc = desc.reshape(-1)
+desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("..\\math2015\\Math1\\problemdesc.txt")
 
 # for i in range(stuNum):
 #     for j in range(questionNum):
@@ -42,31 +30,33 @@ desc = desc.reshape(-1)
 #         elif desc[j] == 'Sub':  # 主观题取最大值
 #             N[i][j] = max(temp)
 
-predictscore = np.copy((1 - S) * N + G * (1 - N))
+predictscore = (1 - S) * N + G * (1 - N)
 rmse = (score - predictscore) * (score - predictscore)
 rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)
 sumRmse = np.sqrt(np.sum((score - predictscore) * (score - predictscore)) / (stuNum * questionNum))
-for i in range(len(predictscore)):
-    for j in range(len(predictscore[i])):
-        if desc[j] == 'Obj':
-            if predictscore[i][j] > 0.5:
-                predictscore[i][j] = 1
-            else:
-                predictscore[i][j] = 0
-rmse2 = (score - predictscore) * (score - predictscore)
+mark = predictscore >= 0.5
+predictscore233 = np.copy(predictscore)
+predictscore233[mark] = 1
+mark = predictscore < 0.5
+predictscore233[mark] = 0
+predictscore233[:, subqueIndex] = predictscore[:, subqueIndex]
+
+rmse2 = (score - predictscore233) * (score - predictscore233)
 rmse2 = np.sqrt(np.sum(rmse2, axis=0) / stuNum)
-sumRmse2 = np.sqrt(np.sum((score - predictscore) * (score - predictscore)) / (stuNum * questionNum))
+sumRmse2 = np.sqrt(np.sum((score - predictscore233) * (score - predictscore233)) / (stuNum * questionNum))
 print("RMSE:", rmse)
 print("RMSE(Wu):", rmse2)
-print("sumRMSE", sumRmse)
-print("sumRMSE2(Wu)", sumRmse2)
+print("averageRMSE", sumRmse)
+print("averageRMSE2(Wu)", sumRmse2)
+# np.savetxt('predictscore.txt', predictscore, fmt='%0.2f')
+# np.savetxt('predictscore233.txt', predictscore233, fmt='%0.2f')
 # print(np.sqrt(np.sum((score - predictscore) * (score - predictscore))/stuNum))
 x = [i for i in range(questionNum)]
 x = np.array(x)
 x = x + 1
 plt.xticks(x)
-plt.plot(x, rmse, 'ro-', label='R-Fuzzy')
-plt.plot(x, rmse2, 'bs-', label='FuzzyCDF')
+plt.plot(x, rmse, 'ro-', label='不设置阈值')
+plt.plot(x, rmse2, 'bs-', label='阈值0.5')
 plt.xlabel("题目号")
 plt.ylabel("RMSE")
 plt.legend(loc='upper right')
