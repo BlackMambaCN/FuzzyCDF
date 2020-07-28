@@ -12,12 +12,12 @@ from sklearn.model_selection import KFold
 # score = np.loadtxt("math2015\\FrcSub\\data.txt")
 # q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
 
-score = np.loadtxt("math2015\\Math1\\data.txt")
-q = np.loadtxt("math2015\\Math1\\q.txt")  # 知识点矩阵
+score = np.loadtxt("math2015\\FrcSub\\data.txt")
+q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
 tempQ = np.copy(q)
 subqusNum = 0  # 主观题数目
 objqusNum = 0  # 客观题数目
-desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("math2015\\Math1\\problemdesc.txt")
+desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("math2015\\FrcSub\\problemdesc.txt")
 funcQ = np.vectorize(transformQ.transform)
 tempQ[objqueIndex] = funcQ(q[objqueIndex])  # 把q矩阵中客观题为0的值改为正无穷
 print(desc)
@@ -64,8 +64,8 @@ max_s = 0.6
 min_g = 0
 max_g = 0.6
 # delta = 1 * 1e-2
-echo = 5000  # 迭代次数
-burnin = 2500
+echo = 10000  # 迭代次数
+burnin = 8000
 
 '''初始化估计值'''
 ea = np.zeros(A.shape)
@@ -412,7 +412,14 @@ for train_index, test_index in index:
         if len(subqueIndex) != 0:  # 存在主观题
             N[i][subqueIndex] = np.max(temp[subqueIndex], axis=1)
     predictscore = (1 - es) * N + eg * (1 - N)
-    rmse = (score - predictscore) * (score - predictscore)
+    predictscore233 = np.copy(predictscore)
+    mark = predictscore >= 0.5
+    predictscore233[mark] = 1
+    mark = predictscore < 0.5
+    predictscore233[mark] = 0
+    if len(subqueIndex) > 0:
+        predictscore233[:, subqueIndex] = predictscore[:, subqueIndex]
+    rmse = (score - predictscore233) * (score - predictscore233)
     rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)
     print("LastRMSE:", rmse)
     np.savetxt('FuzzyA.txt', ea, fmt='%0.2f')

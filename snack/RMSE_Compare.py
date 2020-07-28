@@ -5,8 +5,8 @@ from snack import getDESC
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
-score = np.loadtxt("..\\math2015\\Math1\\data.txt")
-q = np.loadtxt("..\\math2015\\Math1\\q.txt")
+score = np.loadtxt("..\\math2015\\FrcSub\\data.txt")
+q = np.loadtxt("..\\math2015\\FrcSub\\q.txt")
 stuNum = len(score)
 print(stuNum)
 questionNum = len(score[0])
@@ -16,7 +16,7 @@ alpha = np.loadtxt("..\\FuzzyAlpha.txt")
 S = np.loadtxt("..\\FuzzyS.txt")
 G = np.loadtxt("..\\FuzzyG.txt")
 # N = np.zeros([stuNum, questionNum])
-desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("..\\math2015\\Math1\\problemdesc.txt")
+desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("..\\math2015\\FrcSub\\problemdesc.txt")
 
 # for i in range(stuNum):
 #     for j in range(questionNum):
@@ -39,7 +39,8 @@ predictscore233 = np.copy(predictscore)
 predictscore233[mark] = 1
 mark = predictscore < 0.5
 predictscore233[mark] = 0
-predictscore233[:, subqueIndex] = predictscore[:, subqueIndex]
+if len(subqueIndex) > 0:
+    predictscore233[:, subqueIndex] = predictscore[:, subqueIndex]
 
 rmse2 = (score - predictscore233) * (score - predictscore233)
 rmse2 = np.sqrt(np.sum(rmse2, axis=0) / stuNum)
