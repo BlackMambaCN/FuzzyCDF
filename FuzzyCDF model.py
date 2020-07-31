@@ -12,12 +12,12 @@ from sklearn.model_selection import KFold
 # score = np.loadtxt("math2015\\FrcSub\\data.txt")
 # q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
 
-score = np.loadtxt("math2015\\FrcSub\\data.txt")
-q = np.loadtxt("math2015\\FrcSub\\q.txt")  # 知识点矩阵
+score = np.loadtxt("math2015\\Math2\\data.txt")
+q = np.loadtxt("math2015\\Math2\\q.txt")  # 知识点矩阵
 tempQ = np.copy(q)
 subqusNum = 0  # 主观题数目
 objqusNum = 0  # 客观题数目
-desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("math2015\\FrcSub\\problemdesc.txt")
+desc, subqueIndex, objqueIndex, subqusNum, objqusNum = getDESC.getdesc("math2015\\Math2\\problemdesc.txt")
 funcQ = np.vectorize(transformQ.transform)
 tempQ[objqueIndex] = funcQ(q[objqueIndex])  # 把q矩阵中客观题为0的值改为正无穷
 print(desc)
@@ -138,8 +138,8 @@ testIndex = 0
 for train_index, test_index in index:
     testIndex = test_index
     indicator = np.ones([stuNum, questionNum])  # 训练数据标注，1表示训练，0表示测试
-    # testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)  # 测试题号
-    testQuestionIndex = 19
+    testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)  # 测试题号
+    # testQuestionIndex = 19
     if not isinstance(testQuestionIndex, int):
         while len(set(testQuestionIndex)) != len(testQuestionIndex):  # 如果取随机数的时候出现了重复数，重新取
             testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)
