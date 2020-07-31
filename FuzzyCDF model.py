@@ -64,8 +64,8 @@ max_s = 0.6
 min_g = 0
 max_g = 0.6
 # delta = 1 * 1e-2
-echo = 10000  # 迭代次数
-burnin = 8000
+echo = 5000  # 迭代次数
+burnin = 2500
 
 '''初始化估计值'''
 ea = np.zeros(A.shape)
@@ -126,19 +126,23 @@ stuIndex = np.arange(stuNum)
    kfoldNum = 学生数 / 测试学生数 = 测试题目数 / （题目数 * percent）'''
 testQueNum = 8
 kfoldNum = int(testQueNum / (questionNum * percent))
+kfoldNum = 2
 kfold = KFold(n_splits=kfoldNum, shuffle=True)  # n_splits表示划分为几块
 index = kfold.split(X=stuIndex)  # 返回分类后的数据集的索引
-
+testIndex = 0
 '''这里的kfold将【0-535】536个数字分为了5种不同组合形式的训练集+测试集，
    train_index里的数字就是作为训练集的学生的‘编号‘
    test_index里的数字就是作为测试集的学生的‘编号‘ 
    因为有5种不同的，所以要用一个For循环一次一次取出来进行测试'''
 
 for train_index, test_index in index:
+    testIndex = test_index
     indicator = np.ones([stuNum, questionNum])  # 训练数据标注，1表示训练，0表示测试
-    testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)  # 测试题号
-    while len(set(testQuestionIndex)) != len(testQuestionIndex):  # 如果取随机数的时候出现了重复数，重新取
-        testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)
+    # testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)  # 测试题号
+    testQuestionIndex = 19
+    if not isinstance(testQuestionIndex, int):
+        while len(set(testQuestionIndex)) != len(testQuestionIndex):  # 如果取随机数的时候出现了重复数，重新取
+            testQuestionIndex = np.random.randint(0, questionNum - 1, size=testQueNum)
     print("测试题号：", testQuestionIndex)
     for i in test_index:
         indicator[i][testQuestionIndex] = 0  # 测试题号的X%的学生成绩作为测试集
@@ -358,11 +362,12 @@ for train_index, test_index in index:
                         predictscore[i][j] = 1
                     else:
                         predictscore[i][j] = 0
-        rmse = (score - predictscore) * (score - predictscore)
-        rmse2 = np.sqrt(np.sum(np.copy(rmse)) / (stuNum * questionNum))
-        rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)
+        rmse = (score[test_index] - predictscore[test_index]) \
+               * (score[test_index] - predictscore[test_index])
+        # rmse2 = np.sqrt(np.sum(np.copy(rmse)) / (stuNum * questionNum))
+        rmse = np.sqrt(np.sum(rmse, axis=0) / len(test_index))
         print("echo:", w, "RMSE:", rmse)
-        print("SumRMSE:", rmse2)
+        # print("SumRMSE:", rmse2)
 
         '''2020.6.13'''
         '''更新方差'''
@@ -419,8 +424,9 @@ for train_index, test_index in index:
     predictscore233[mark] = 0
     if len(subqueIndex) > 0:
         predictscore233[:, subqueIndex] = predictscore[:, subqueIndex]
-    rmse = (score - predictscore233) * (score - predictscore233)
-    rmse = np.sqrt(np.sum(rmse, axis=0) / stuNum)
+    rmse = (score[testIndex] - predictscore233[testIndex]) \
+           * (score[testIndex] - predictscore233[testIndex])
+    rmse = np.sqrt(np.sum(rmse, axis=0) / len(testIndex))
     print("LastRMSE:", rmse)
     np.savetxt('FuzzyA.txt', ea, fmt='%0.2f')
     np.savetxt('FuzzyB.txt', eb, fmt='%0.2f')
@@ -430,7 +436,7 @@ for train_index, test_index in index:
     np.savetxt('FuzzyAlpha.txt', ealpha, fmt='%0.2f')
     np.savetxt('FuzzyN.txt', N, fmt='%0.2f')
     np.savetxt('FuzzyX.txt', predictscore, fmt='%0.2f')
-    np.savetxt('FuzzyRMSE.txt', rmse, fmt='%0.3f')
+    np.savetxt('FuzzyTest_Index.txt', testIndex, fmt='%0.3f')
     # np.savetxt('FuzzyB.txt', B, fmt='%0.2f')
     # np.savetxt('FuzzyN.txt', alpha, fmt='%0.2f')
     break
